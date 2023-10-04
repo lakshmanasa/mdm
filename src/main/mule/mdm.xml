@@ -1,0 +1,376 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:batch="http://www.mulesoft.org/schema/mule/batch"
+	xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:oraclehcmcloud="http://www.mulesoft.org/schema/mule/oraclehcmcloud" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/oraclehcmcloud http://www.mulesoft.org/schema/mule/oraclehcmcloud/current/mule-oraclehcmcloud.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="db14eb59-a1e9-43fb-95b7-b2760045fd7d" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<os:object-store name="storing" doc:name="Object store" doc:id="d130d8a9-7ac9-441b-a10e-7a2c099f3977" />
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="9263bb36-e150-4603-a93d-d5c447a323c6" >
+		<db:my-sql-connection host="localhost" port="3306" user="root" password="123456" />
+	</db:config>
+	<flow name="mdmFlow" doc:id="63e2f457-8c7f-4e80-bade-32d39cb44101" >
+		<http:listener doc:name="Listener" doc:id="657f6ee3-f973-4010-aff1-5bced73ec468" path="/read" config-ref="HTTP_Listener_config"/>
+		<file:read doc:name="Read" doc:id="6b82245e-c8ca-44b1-9d69-853231d4a7d4" path="E:\files.xlsx" outputMimeType="application/xlsx"/>
+		<ee:transform doc:name="Transform Message" doc:id="73200cd2-670d-4464-859c-5aa05d6bb9c6" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<set-variable value="#[payload]" doc:name="Set Variable" doc:id="6ed5a45f-c590-454a-bed2-49991d6b4913" variableName="a"/>
+		<os:retrieve-all doc:name="Retrieve all" doc:id="a778bfa6-b4e8-4bc1-8c81-cf090a703f34" objectStore="storing"/>
+		<ee:transform doc:name="Transform Message" doc:id="00bc1069-a089-4821-a4c3-6ee4e5686d2e" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Transform Message" doc:id="cbc0a5e6-1baf-4f16-8bc6-dc19bd238cca" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+}]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="account" ><![CDATA[%dw 2.0
+output application/json
+var a = (payload.account) replace "\"" with ""
+var b = vars.a.CustomerAccountDetials filter($.SR_NO > a)
+var c = if(payload == {}) {
+	acc: vars.a.CustomerAccountDetials map
+	{
+    "SR_NO":$.SR_NO,
+    "UCIC": $.UCIC,
+    "FirstName": $.FirstName,
+    "MiddileName": $.MiddileName,
+    "LastName": $.LastName,
+    "Saliture": $.Saliture,
+    "AccountName": $.AccountName,
+    "AccountType": $.AccountType,
+    "Mobile": $.Mobile,
+    "Email": $.Email,
+    "CountryCode": $.CountryCode,
+    "BillingAddress1": $.BillingAddress1,
+    "BillingAddress2": $.BillingAddress2,
+    "BillingCountry": $.BillingCountry,
+    "BillingPinCode": $.BillingPinCode,
+    "ShippingAddress1": $.ShippingAddress1,
+    "ShippingAddress2": $.ShippingAddress2,
+    "ShippingCountry": $.ShippingCountry,
+    "ShippingPinCode": $.ShippingPinCode,
+    "CustomerCreatedDate": $.CustomerCreatedDate,
+    "sourcesystem": $.sourcesystem,
+    "createdDate": $.createdDate
+
+}
+}
+else
+{
+	acc: b map{
+		
+    "SR_NO":$.SR_NO,
+    "UCIC": $.UCIC,
+    "FirstName": $.FirstName,
+    "MiddileName": $.MiddileName,
+    "LastName": $.LastName,
+    "Saliture": $.Saliture,
+    "AccountName": $.AccountName,
+    "AccountType": $.AccountType,
+    "Mobile": $.Mobile,
+    "Email": $.Email,
+    "CountryCode": $.CountryCode,
+    "BillingAddress1": $.BillingAddress1,
+    "BillingAddress2": $.BillingAddress2,
+    "BillingCountry": $.BillingCountry,
+    "BillingPinCode": $.BillingPinCode,
+    "ShippingAddress1": $.ShippingAddress1,
+    "ShippingAddress2": $.ShippingAddress2,
+    "ShippingCountry": $.ShippingCountry,
+    "ShippingPinCode": $.ShippingPinCode,
+    "CustomerCreatedDate": $.CustomerCreatedDate,
+    "sourcesystem": $.sourcesystem,
+    "createdDate": $.createdDate
+
+
+		
+	}
+}
+---
+c.acc]]></ee:set-variable>
+				<ee:set-variable variableName="identification" ><![CDATA[%dw 2.0
+output application/json
+var a = (payload.identification) replace "\"" with ""
+var b = vars.a.CustomerAccountDetials filter($.SR_NO > a)
+var c = if(payload == {}) {
+	iden: vars.a.CustomerAccountDetials map{
+    "SR_NO": $.SR_NO,
+    "UCIC": $.UCIC,
+    "documentType": $.documentType,
+    "documentNumber": $.documentNumber,
+    "createdDate": $.createdDate
+  
+}
+}
+else
+{
+	iden: b map{
+    "SR_NO": $.SR_NO,
+    "UCIC": $.UCIC,
+    "documentType": $.documentType,
+    "documentNumber": $.documentNumber,
+    "createdDate": $.createdDate
+  
+}
+}
+---
+c.iden]]></ee:set-variable>
+				<ee:set-variable variableName="financial" ><![CDATA[%dw 2.0
+output application/json
+var a = (payload.financial) replace "\"" with ""
+var b = vars.a.CustomerAccountDetials filter($.SR_NO > a)
+var c = if(payload == {}) {
+	fin: vars.a.CustomerAccountDetials map{
+    "SR_NO": $.SR_NO,
+    "UCIC": $.UCIC,
+    "FinancialAccount": $.FinancialAccount,
+    "ProductCode": $.ProductCode,
+    "Subproductcode": $.Subproductcode,
+    "productType": $.productType,
+    "Mobile": $.Mobile,
+    "sourcesystem": $.sourcesystem,
+    "createdDate": $.createdDate
+
+}
+}
+else
+{
+	fin: b map{
+    "SR_NO": $.SR_NO,
+    "UCIC": $.UCIC,
+    "FinancialAccount": $.FinancialAccount,
+    "ProductCode": $.ProductCode,
+    "Subproductcode": $.Subproductcode,
+    "productType": $.productType,
+    "Mobile": $.Mobile,
+    "sourcesystem": $.sourcesystem,
+    "createdDate": $.createdDate
+
+}
+}
+---
+c.fin]]></ee:set-variable>
+				<ee:set-variable variableName="creditcard" ><![CDATA[%dw 2.0
+output application/json
+var a = (payload.creditcard) replace "\"" with ""
+var b = vars.a.CreditcardDetaisl filter($.SR_NO > a)
+var c = if(payload == {}) {
+	cred: vars.a.CreditcardDetaisl map{
+    "SR_NO": $.SR_NO,
+    "UCIC": $.UCIC,
+    "FINANCIALACCOUNT": $.FINANCIALACCOUNT,
+    "CARDSERIAL_NUMBER": $.CARDSERIAL_NUMBER,
+    "CARDNUMBER": $.CARDNUMBER,
+    "CREATEDDATE": $.CREATEDDATE
+
+}
+}
+else
+{
+	cred: b map{
+    "SR_NO": $.SR_NO,
+    "UCIC": $.UCIC,
+    "FINANCIALACCOUNT": $.FINANCIALACCOUNT,
+    "CARDSERIAL_NUMBER": $.CARDSERIAL_NUMBER,
+    "CARDNUMBER": $.CARDNUMBER,
+    "CREATEDDATE": $.CREATEDDATE
+
+}
+}
+---
+c.cred]]></ee:set-variable>
+				<ee:set-variable variableName="creditAddress" ><![CDATA[%dw 2.0
+output application/json
+var a = (payload.creditAddress) replace "\"" with ""
+var b = vars.a.CreditcardDetaisl filter($.SR_NO > a)
+var c = if(payload == {}) {
+	add: vars.a.CreditcardDetaisl map{
+    "SR_NO": $.SR_NO,
+    "UCIC": $.UCIC,
+    "CCAddressType": $.CCAddressType,
+    "CCAddress1": $.CCAddress1,
+    "CCAddress2": $.CCAddress2,
+    "CCAddress3": $.CCAddress3,
+    "Country": $.Country,
+    "PINCODE": $.PINCODE,
+    "CREATEDDATE": $.CREATEDDATE
+}
+}
+else
+{
+	add: b map{
+    "SR_NO": $.SR_NO,
+    "UCIC": $.UCIC,
+    "CCAddressType": $.CCAddressType,
+    "CCAddress1": $.CCAddress1,
+    "CCAddress2": $.CCAddress2,
+    "CCAddress3": $.CCAddress3,
+    "Country": $.Country,
+    "PINCODE": $.PINCODE,
+    "CREATEDDATE": $.CREATEDDATE
+}
+}
+---
+c.add]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<scatter-gather doc:name="Scatter-Gather" doc:id="b9578648-90d1-4266-aa3f-dacbdd04e2f6" >
+			<route >
+				<set-variable value='#["account"]' doc:name="Set Variable" doc:id="62dde928-d810-4548-a84c-a4703d67b88e" variableName="accountStore"/>
+				<flow-ref doc:name="Flow Reference" doc:id="1a4e1016-adbb-4774-936e-4bdfede150f5" name="mdmFlow"/>
+			</route>
+			<route >
+				<set-variable value='#["financial"]' doc:name="Set Variable" doc:id="6d3b568f-b8fe-496e-af9f-f7b0754909bd" variableName="financialStore"/>
+				<flow-ref doc:name="Flow Reference" doc:id="2a24ae6a-d9ee-4f15-9454-a7cd0a6866f5" name="mdmFlow"/>
+			</route>
+			<route >
+				<set-variable value='#["identification"]' doc:name="Set Variable" doc:id="78d37eda-f674-4871-a6eb-423f47478b6f" variableName="identificationStore"/>
+				<flow-ref doc:name="Flow Reference" doc:id="250fd23a-8e64-4520-993d-8e89349b6626" name="mdmFlow"/>
+			</route>
+			<route >
+				<set-variable value='#["creditcard"]' doc:name="Set Variable" doc:id="5e527542-c298-4640-a9a0-629edbd6c082" variableName="creditcardStore"/>
+				<flow-ref doc:name="Flow Reference" doc:id="96e275fd-6322-487c-91bf-165166cfdcde" name="mdmFlow"/>
+			</route>
+			<route >
+				<set-variable value='#["creditAddress"]' doc:name="Set Variable" doc:id="90f48480-2924-4b40-93be-2189801c28c5" variableName="creditAddressStore"/>
+				<flow-ref doc:name="Flow Reference" doc:id="6baad40b-ba0f-481c-a69d-e0b8ecc683a0" name="mdmFlow"/>
+			</route>
+		</scatter-gather>
+	</flow>
+	<flow name="mdmFlow1" doc:id="d48aadfe-a827-4553-9439-f98c80f316b9" >
+		<ee:transform doc:name="Transform Message" doc:id="42ccbb17-0a49-42af-b932-9673ce0faec8" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+if(vars.accountStore == "account")
+{
+	ip: vars.account
+}
+else if(vars.financialStore == "financial")
+{
+	ip: vars.financial
+}
+else if(vars.identificationStore == "identification")
+{
+	ip: vars.identification
+}
+else if(vars.creditcardStore == "creditcard")
+{
+	ip: vars.creditcard
+}
+else if(vars.creditAddressStore == "creditAddress")
+{
+	ip: vars.creditAddress
+}
+else
+{
+	ip: "null"
+}]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="query" ><![CDATA[%dw 2.0
+output application/json
+---
+if(vars.accountStore == "account")
+{
+	"query": "insert into assignment.account values(:SR_NO,:UCIC,:FirstName,:MiddileName,:LastName,:Saliture,:AccountName,:AccountType,:Mobile,:Email,:CountryCode,:BillingAddress1,:BillingAddress2,:BillingCountry,:BillingPinCode,:ShippingAddress1,:ShippingAddress2,:ShippingCountry,:ShippingPinCode,:CustomerCreatedDate,:sourcesystem,:createdDate)"
+}
+else if(vars.financialStore == "financial")
+{
+	"query": "insert into assignment.financial values(:SR_NO,:UCIC,:FinancialAccount,:ProductCode,:Subproductcode,:productType,:Mobile,:sourcesystem,:createdDate)"
+}
+else if(vars.identificationStore == "identification")
+{
+	"query": "insert into assignment.identification values(:SR_NO,:UCIC,:documentType,:documentNumber,:createdDate)"
+}
+else if(vars.creditcardStore == "creditcard")
+{
+	"query": "insert into assignment.`credit-card` values(:SR_NO,:UCIC,:FINANCIALACCOUNT,:CARDSERIAL_NUMBER,:CARDNUMBER,:CREATEDDATE)"
+}
+else if(vars.creditAddressStore == "creditAddress")
+{
+	"query": "insert into assignment.creditaddress values(:SR_NO,:UCIC,:CCAddressType,:CCAddress1,:CCAddress2,:CCAddress3,:Country,:PINCODE,:CREATEDDATE)"
+}
+else
+{
+	"query": "null"
+}
+]]></ee:set-variable>
+				<ee:set-variable variableName="storing" ><![CDATA[%dw 2.0
+output application/json
+---
+if(vars.accountStore == "account")
+{
+	store: "account"
+}
+else if(vars.financialStore == "financial")
+{
+	store: "financial"
+}
+else if(vars.identificationStore == "identification")
+{
+	store: "identification"
+}
+else if(vars.creditcardStore == "creditcard")
+{
+	store: "creditcard"
+}
+else if(vars.creditAddressStore == "creditAddress")
+{
+	store: "creditAddress"
+}
+else
+{
+	store: "null"
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform doc:name="Transform Message" doc:id="d6d7c1e4-234d-40e4-971b-d1110f1d98fc" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload.ip]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<batch:job jobName="mdmBatch_Job" doc:id="df789408-12ec-44cf-a3ba-3f12230f4584" >
+			<batch:process-records >
+				<batch:step name="Batch_Step" doc:id="312a2e48-e76f-4c7a-ad5e-f29cb2e99eb9" >
+					<set-variable value="#[payload]" doc:name="Set Variable" doc:id="eb83d70c-be3d-476b-b3ae-569c0eefb6c9" variableName="ov"/>
+					<os:store doc:name="Store" doc:id="8cc0e9f1-5829-4d5a-bb4b-94a49486e3de" key="#[vars.storing.store]" objectStore="storing">
+						<os:value ><![CDATA[#[payload.SR_NO]]]></os:value>
+					</os:store>
+					<db:insert doc:name="Insert" doc:id="b4270edd-0233-4a14-b657-46eff2285717" config-ref="Database_Config">
+						<db:sql ><![CDATA[#[vars.query.query]]]></db:sql>
+						<db:input-parameters ><![CDATA[#[vars.ov]]]></db:input-parameters>
+					</db:insert>
+				</batch:step>
+			</batch:process-records>
+		</batch:job>
+	</flow>
+</mule>
